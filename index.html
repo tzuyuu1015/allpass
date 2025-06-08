@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>資訊網路</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        gap: 30px;
+      }
+      .main {
+        max-width: 600px;
+        flex: 1;
+      }
+      .question {
+        margin-bottom: 1rem;
+      }
+      .options button {
+        display: block;
+        margin: 5px 0;
+        padding: 10px;
+        width: 100%;
+      }
+      .nav-buttons {
+        margin-top: 1rem;
+      }
+      .results {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        background: #f9f9f9;
+      }
+      .sidebar {
+        width: 200px;
+        font-size: 14px;
+      }
+      .sidebar h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #ccc;
+      }
+      .wrong-list {
+        color: red;
+        list-style: none;
+        padding-left: 0;
+      }
+      .wrong-list li {
+        cursor: pointer;
+        margin-bottom: 5px;
+      }
+      select {
+        margin-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main">
+      <h1></h1>
+      <div>
+        <label>
+          跳至題號：
+          <select id="questionSelect" onchange="jumpToQuestion()"></select>
+        </label>
+      </div>
+      <div class="question" id="question"></div>
+      <div class="options" id="options"></div>
+      <div class="nav-buttons">
+        <button onclick="prevQuestion()">上一題</button>
+        <button onclick="nextQuestion()">下一題</button>
+      </div>
+      <div class="results" id="results" style="display: none"></div>
+    </div>
+    <div class="sidebar">
+      <h3>❌ 錯誤題號</h3>
+      <ul class="wrong-list" id="wrongList"></ul>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+      let currentQuestionIndex = 0;
+      let score = 0;
+      const userAnswers = Array(questions.length).fill(null);
+
+      const questionEl = document.getElementById("question");
+      const optionsEl = document.getElementById("options");
+      const resultsEl = document.getElementById("results");
+      const questionSelect = document.getElementById("questionSelect");
+      const wrongListEl = document.getElementById("wrongList");
+
+      questions.forEach((_, i) => {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = `第 ${i + 1} 題`;
+        questionSelect.appendChild(opt);
+      });
+
+      function showQuestion() {
+        const q = questions[currentQuestionIndex];
+        questionEl.innerHTML = `<h2>第 ${currentQuestionIndex + 1} 題：${
+          q.question
+        }</h2>`;
+        optionsEl.innerHTML = "";
+        q.options.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.textContent = opt;
+          btn.onclick = () => answerQuestion(i);
+          if (userAnswers[currentQuestionIndex] !== null) {
+            btn.disabled = true;
+            if (i === q.answer) btn.style.background = "lightgreen";
+            if (i === userAnswers[currentQuestionIndex] && i !== q.answer)
+              btn.style.background = "salmon";
+          }
+          optionsEl.appendChild(btn);
+        });
+        questionSelect.value = currentQuestionIndex;
+      }
+
+      function answerQuestion(choice) {
+        if (userAnswers[currentQuestionIndex] !== null) return;
+        userAnswers[currentQuestionIndex] = choice;
+        if (choice === questions[currentQuestionIndex].answer) {
+          score++;
+        }
+        showQuestion();
+        updateWrongList();
+        if (userAnswers.every((ans) => ans !== null)) {
+          showResults();
+        }
+      }
+
+      function updateWrongList() {
+        wrongListEl.innerHTML = "";
+        userAnswers.forEach((ans, idx) => {
+          if (ans !== null && ans !== questions[idx].answer) {
+            const li = document.createElement("li");
+            li.textContent = `第 ${idx + 1} 題`;
+            li.onclick = () => {
+              currentQuestionIndex = idx;
+              showQuestion();
+            };
+            wrongListEl.appendChild(li);
+          }
+        });
+      }
+
+      function showResults() {
+        resultsEl.style.display = "block";
+        const correctCount = score;
+        const total = questions.length;
+        const percentage = ((correctCount / total) * 100).toFixed(1);
+
+        resultsEl.innerHTML = `<strong>成績分析：</strong><br>
+          答對題數：${correctCount} / ${total}<br>
+          正確率：${percentage}%`;
+      }
+
+      function nextQuestion() {
+        if (currentQuestionIndex < questions.length - 1) {
+          currentQuestionIndex++;
+          showQuestion();
+        }
+      }
+
+      function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+          currentQuestionIndex--;
+          showQuestion();
+        }
+      }
+
+      function jumpToQuestion() {
+        currentQuestionIndex = parseInt(questionSelect.value);
+        showQuestion();
+      }
+
+      showQuestion();
+    </script>
+  </body>
+</html>
